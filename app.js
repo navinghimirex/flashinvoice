@@ -318,19 +318,28 @@ const FlashInvoice = {
     const element = $('#pdf-template');
     const filename = `${data.invoiceNumber || 'invoice'}.pdf`;
 
+    // Temporarily show template in normal flow for html2canvas capture
+    element.classList.remove('pdf-template');
+    element.removeAttribute('aria-hidden');
+    element.style.cssText = 'display:block;position:static;width:800px;padding:40px;background:white;';
+
     const opt = {
       margin: 0,
       filename,
       image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true },
+      html2canvas: { scale: 2, useCORS: true, logging: false },
       jsPDF: { unit: 'px', format: [820, 1160], hotfixes: ['px_scaling'] },
     };
 
     try {
-      await html2pdf().set(opt).from(element).save();
+      await html2pdf(element, opt);
     } catch (err) {
       console.error('PDF generation failed:', err);
       alert('PDF generation failed. Please try again.');
+    } finally {
+      element.style.cssText = '';
+      element.classList.add('pdf-template');
+      element.setAttribute('aria-hidden', 'true');
     }
   }
 
