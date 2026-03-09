@@ -257,7 +257,7 @@ const FlashInvoice = {
 
   // -- PDF generation --
   function populatePdfTemplate(data) {
-    const fc = FlashInvoice.formatCurrency;
+    const fc = (amount, cur) => FlashInvoice.formatCurrency(amount, cur);
     const c = currentCurrency;
 
     $('#pdf-companyName').textContent = data.companyName;
