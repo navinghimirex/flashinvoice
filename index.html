@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FlashInvoice — Free Invoice Generator</title>
+  <meta name="description" content="Create professional invoices in seconds. Free, no sign-up, works offline.">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" defer></script>
+</head>
+<body>
+  <header class="app-header">
+    <div class="header-left">
+      <h1 class="logo"><span class="logo-icon">&#9889;</span> FlashInvoice</h1>
+      <span class="tagline">Free Invoice Generator</span>
+    </div>
+    <div class="header-right">
+      <select id="currency" aria-label="Currency">
+        <option value="USD">$ USD</option>
+        <option value="EUR">&euro; EUR</option>
+        <option value="GBP">&pound; GBP</option>
+        <option value="INR">&#8377; INR</option>
+      </select>
+      <button id="btn-download" class="btn btn-primary" disabled>
+        <span class="btn-icon">&#11015;</span> Download PDF
+      </button>
+    </div>
+  </header>
+
+  <main class="invoice-form">
+    <!-- Parties -->
+    <div class="parties-row">
+      <fieldset class="party-card" id="from-section">
+        <legend>From</legend>
+        <div class="field">
+          <label for="companyName">Company / Your Name <span class="req">*</span></label>
+          <input type="text" id="companyName" placeholder="Acme Corp" required>
+          <span class="field-error" data-for="companyName"></span>
+        </div>
+        <div class="field">
+          <label for="companyAddress">Address</label>
+          <textarea id="companyAddress" rows="2" placeholder="123 Main St&#10;City, State ZIP"></textarea>
+        </div>
+        <div class="field">
+          <label for="companyEmail">Email</label>
+          <input type="email" id="companyEmail" placeholder="you@company.com">
+          <span class="field-error" data-for="companyEmail"></span>
+        </div>
+        <div class="field">
+          <label for="companyPhone">Phone</label>
+          <input type="tel" id="companyPhone" placeholder="+1 555-0100">
+        </div>
+        <div class="field">
+          <label class="save-label">
+            <input type="checkbox" id="saveCompany"> Remember my details
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset class="party-card" id="to-section">
+        <legend>Bill To</legend>
+        <div class="field">
+          <label for="clientName">Client Name <span class="req">*</span></label>
+          <input type="text" id="clientName" placeholder="Client Inc." required>
+          <span class="field-error" data-for="clientName"></span>
+        </div>
+        <div class="field">
+          <label for="clientAddress">Address</label>
+          <textarea id="clientAddress" rows="2" placeholder="456 Oak Ave&#10;City, State ZIP"></textarea>
+        </div>
+        <div class="field">
+          <label for="clientEmail">Email</label>
+          <input type="email" id="clientEmail" placeholder="billing@client.com">
+          <span class="field-error" data-for="clientEmail"></span>
+        </div>
+        <div class="field">
+          <label for="clientPhone">Phone</label>
+          <input type="tel" id="clientPhone" placeholder="+1 555-0200">
+        </div>
+      </fieldset>
+    </div>
+
+    <!-- Invoice Meta -->
+    <div class="meta-row">
+      <div class="field">
+        <label for="invoiceNumber">Invoice # <span class="req">*</span></label>
+        <input type="text" id="invoiceNumber" placeholder="INV-001" required>
+        <span class="field-error" data-for="invoiceNumber"></span>
+      </div>
+      <div class="field">
+        <label for="invoiceDate">Invoice Date <span class="req">*</span></label>
+        <input type="date" id="invoiceDate" required>
+        <span class="field-error" data-for="invoiceDate"></span>
+      </div>
+      <div class="field">
+        <label for="dueDate">Due Date</label>
+        <input type="date" id="dueDate">
+        <span class="field-error" data-for="dueDate"></span>
+      </div>
+    </div>
+
+    <!-- Line Items -->
+    <section class="line-items-section">
+      <h2>Items</h2>
+      <table class="line-items-table" id="lineItemsTable">
+        <thead>
+          <tr>
+            <th class="col-desc">Description</th>
+            <th class="col-qty">Qty</th>
+            <th class="col-rate">Rate</th>
+            <th class="col-amount">Amount</th>
+            <th class="col-action"></th>
+          </tr>
+        </thead>
+        <tbody id="lineItemsBody">
+          <!-- rows injected by JS -->
+        </tbody>
+      </table>
+      <button id="btn-add-row" class="btn btn-ghost" type="button">+ Add Item</button>
+
+      <!-- Totals -->
+      <div class="totals-panel">
+        <div class="totals-row">
+          <span>Subtotal</span>
+          <span id="subtotal">$0.00</span>
+        </div>
+        <div class="totals-row tax-row">
+          <span>
+            Tax
+            <input type="number" id="taxRate" value="0" min="0" max="100" step="0.1" aria-label="Tax rate percent">%
+          </span>
+          <span id="taxAmount">$0.00</span>
+          <span class="field-error" data-for="taxRate"></span>
+        </div>
+        <div class="totals-row total-row">
+          <span>Total</span>
+          <span id="totalAmount">$0.00</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Notes -->
+    <div class="notes-section">
+      <label for="notes">Notes / Payment Terms</label>
+      <textarea id="notes" rows="3" placeholder="Payment due within 30 days. Bank details: ..."></textarea>
+    </div>
+  </main>
+
+  <!-- Hidden PDF template -->
+  <div id="pdf-template" class="pdf-template" aria-hidden="true">
+    <div class="pdf-header">
+      <div class="pdf-company">
+        <h2 id="pdf-companyName"></h2>
+        <p id="pdf-companyAddress"></p>
+        <p id="pdf-companyContact"></p>
+      </div>
+      <div class="pdf-invoice-title">
+        <h1>INVOICE</h1>
+        <p><strong>Invoice #:</strong> <span id="pdf-invoiceNumber"></span></p>
+        <p><strong>Date:</strong> <span id="pdf-invoiceDate"></span></p>
+        <p><strong>Due:</strong> <span id="pdf-dueDate"></span></p>
+      </div>
+    </div>
+    <div class="pdf-billto">
+      <h3>Bill To</h3>
+      <p id="pdf-clientName"></p>
+      <p id="pdf-clientAddress"></p>
+      <p id="pdf-clientContact"></p>
+    </div>
+    <table class="pdf-table">
+      <thead>
+        <tr>
+          <th>Description</th>
+          <th>Qty</th>
+          <th>Rate</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="pdf-lineItems"></tbody>
+    </table>
+    <div class="pdf-totals">
+      <div class="pdf-totals-row"><span>Subtotal</span><span id="pdf-subtotal"></span></div>
+      <div class="pdf-totals-row"><span>Tax (<span id="pdf-taxLabel"></span>)</span><span id="pdf-taxAmount"></span></div>
+      <div class="pdf-totals-row pdf-total"><span>Total</span><span id="pdf-totalAmount"></span></div>
+    </div>
+    <div class="pdf-notes" id="pdf-notes"></div>
+    <div class="pdf-footer">Generated with FlashInvoice</div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
